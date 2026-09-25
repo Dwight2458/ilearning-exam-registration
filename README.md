@@ -15,7 +15,8 @@ iLearning 考试场次「抢名额」工具。
 |---|---|
 | `ilearning_sniper.py` | 主程序：轮询 + 自动报名，默认 dry-run |
 | `iLearning报名接口探测报告.md` | 接口清单、字段说明、实测记录、踩坑记录 |
-| `pw/getcookie_cdp.sh` | 通过 CDP 从 Edge 静默导出 Cookie（推荐） |
+| `pw/getcookie_cdp.sh` | 通过 CDP 取 Cookie，**含 SSO 自动重登录**（推荐） |
+| `pw/check_sso.py` | 诊断：验证「开页面能否自动登录」 |
 | `pw/getcookie.sh` | 通过 Playwright 扩展导出 Cookie（备用，会临时开标签页） |
 | `pw/mkcookie_state.py` | 把 storageState JSON 过滤成请求头字符串 |
 | `pw/mkcookie.py` | 把 cookie-list 文本过滤成请求头字符串 |
@@ -56,6 +57,30 @@ python ilearning_sniper.py --city 上研青浦 --interval 30 --execute --yes \
 
 **Cookie 会老化**（实测十几分钟到一小时），所以加了 `--refresh-every 600` 主动保鲜；
 即使不用保鲜，脚本也会每轮读一次 Cookie 文件，手动改了立刻生效、不用重启进程。
+
+### SSO 自动重登录（关键，实现无人值守）
+
+取 Cookie 时会先用 CDP **开一个标签页访问 `https://ilearning.huawei.com/`**，
+页面会自动走 SSO 重新登录（实测落地 `/edx/next/`），等 6 秒后再导出，最后按索引把
+这个临时标签页关掉。所以即使浏览器登录态失效了，也不需要人工介入。
+
+```
+失效 → 开页面触发 SSO 自动登录 → 等 6s → 导出并验证 → 恢复轮询
+```
+
+已验证：手动写一份失效 Cookie 模拟过期 → 走上述流程 → 接口恢复正常。
+
+开关（环境变量）：
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `SSO_WAIT` | `6` | 预热等待秒数 |
+| `SKIP_SSO` | `0` | 设为 `1` 跳过预热（只导出） |
+| `SSO_URL` | `https://ilearning.huawei.com/` | 预热页面 |
+
+> 注意：开标签页用的是 playwright 的 `tab-new`，不是 CDP 的 `/json/new?url=`——
+> 这台 Edge 上后者只会开出 `about:blank`，URL 参数不生效。
+> 关闭前会校验该索引上确实是 iLearning 页，不匹配就跳过，宁可留一个多余标签页也不误关你的标签页。
 
 ## 几个已经踩过的坑
 

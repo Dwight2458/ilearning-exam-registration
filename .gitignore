@@ -1,9 +1,16 @@
 # === 凭据，绝对不能提交 ===
-# .ilearning_cookie.txt 是真实登录 Cookie（含 SSO 会话），泄露等于别人可以你的身份操作
+# 这一类文件里是真实 Cookie / token，提交等于把账号交出去。
+# 注意用 **/ 前缀匹配任意层级 —— 之前的坑就是只写了 pw/raw_cookies.txt，
+# 结果文件被挪到 recon/ 之后漏网，被提交并 push 到了 GitHub。
 .ilearning_cookie.txt
 good_cookie.txt
-state_cdp.json
-pw/raw_cookies.txt
+**/raw_cookies.txt
+**/state_cdp.json
+**/state.json
+**/*cookie*.txt
+**/*cookie*.json
+**/*_token*
+**/cookies.txt
 
 # === 运行时产物 ===
 sniper.log
@@ -11,6 +18,12 @@ sniper.log.*
 __pycache__/
 *.pyc
 .playwright-cli/
+
+# === 误创建的系统路径字面量目录 ===
+# 某些工具会把 %SystemDrive% 当成真实路径，在仓库里生成这种垃圾目录
+%SystemDrive%/
+%USERPROFILE%/
+%TEMP%/
 
 # === 本地导出 ===
 *.tmp

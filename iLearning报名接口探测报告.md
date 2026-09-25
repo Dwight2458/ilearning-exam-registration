@@ -238,7 +238,13 @@ python ilearning_sniper.py --city 上研青浦 --interval 20 --execute --yes --c
    「浏览器登录态已失效，请重新登录」，而不是含糊地说「导出成功」。
    连续 2 次无效就停掉自动刷新，等你人工登录。
 
-5. **⚠️ 强杀 Edge 会清掉 SSO 会话 Cookie**。`hwssot` / `SESSION` / `ilearning-session` /
+5. **CDP 的 `/json/new?url=` 不会跳转**（这台 Edge 140.0.3485.81 上只会开出 `about:blank`）。
+   要开页面必须用 playwright 的 `tab-new`，它能正常导航。
+   顺带验证：访问 `https://ilearning.huawei.com/` 会**自动完成 SSO 登录**，落地 `/edx/next/`。
+   → 因此取 Cookie 流程改成「开页面预热 6s → 导出 → 关标签页」，**浏览器登录态失效也能自愈**，
+   彻底不需要人工介入。实测：手动写入失效 Cookie → 预热导出 → 接口恢复。
+
+6. **⚠️ 强杀 Edge 会清掉 SSO 会话 Cookie**。`hwssot` / `SESSION` / `ilearning-session` /
    `SESSIONID` / `hwsso_login` 都是**会话级 Cookie（无过期时间）**，Chromium 只在**正常退出**时
    才落盘；`taskkill /F` 直接丢，之后 iLearning 需要重新登录。
    `restart_edge_debug.cmd` 已改成「先优雅关闭 → 等 6 秒 → 检测残留 → 才强杀」。

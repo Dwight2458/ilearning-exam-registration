@@ -133,7 +133,10 @@ def run_refresh_script(script: str, timeout: int) -> bool:
                            text=True, encoding="utf-8", errors="replace", env=env)
         out = (r.stdout or "").strip()
         if out:
-            log("刷新脚本输出：" + out.splitlines()[-1])
+            # 把脚本所有输出都记下来，否则「SSO 预热中」这类过程信息会被吞掉
+            for ln in out.splitlines():
+                if ln.strip():
+                    log("  [取Cookie] " + ln.strip())
         return r.returncode == 0
     except Exception as e:
         log(f"刷新脚本异常：{e}")
@@ -160,7 +163,7 @@ def refresh_cookie_from_browser(source: str = "auto", timeout: int = 300) -> boo
     """
     if source in ("auto", "cdp"):
         if cdp_port_open():
-            log("走 CDP 调试端口导出 Cookie（不开新标签页）…")
+            log("走 CDP 通道取 Cookie（会临时开 1 个标签页触发 SSO 自动登录，用完即关）…")
             if run_refresh_script(REFRESH_CDP_SCRIPT, timeout):
                 return True
             if source == "cdp":
@@ -173,7 +176,7 @@ def refresh_cookie_from_browser(source: str = "auto", timeout: int = 300) -> boo
     if source in ("auto", "browser"):
         if not os.path.exists(REFRESH_SCRIPT):
             return False
-        log("走 Playwright 扩展导出 Cookie（会临时开 1 个 Welcome 标签页，随后自动关闭）…")
+        log("走 Playwright 扩展取 Cookie（会临时开 1 个 Welcome 标签页，随后自动关闭）…")
         return run_refresh_script(REFRESH_SCRIPT, timeout)
     return False
 
