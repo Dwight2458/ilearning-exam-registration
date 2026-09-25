@@ -1,0 +1,16 @@
+# === 凭据，绝对不能提交 ===
+# .ilearning_cookie.txt 是真实登录 Cookie（含 SSO 会话），泄露等于别人可以你的身份操作
+.ilearning_cookie.txt
+good_cookie.txt
+state_cdp.json
+pw/raw_cookies.txt
+
+# === 运行时产物 ===
+sniper.log
+sniper.log.*
+__pycache__/
+*.pyc
+.playwright-cli/
+
+# === 本地导出 ===
+*.tmp
