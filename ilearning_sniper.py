@@ -352,32 +352,34 @@ def cancel_booking(session_id: str, cookie: str):
 
 def try_book(exam_id: str, session: dict, cookie: str, execute: bool) -> bool:
     sid = session.get("id")
-    print(f"\n[命中] {fmt_session(session)}")
+    # 一律走 log()，否则「命中 / 报名成功」这类最关键的记录只会进 stdout，
+    # 不会落到 sniper.log —— 排查时最想看的就是它们。
+    log(f"🎯 命中 {fmt_session(session)}")
 
     # 1) 报名前校验（只读，不会占名额）
     chk = post(URL_CHECK, {"examId": exam_id, "id": sid}, cookie)
     if chk.get("code") != 200:
-        print(f"  [校验失败] {chk.get('code')} {chk.get('message')} —— 跳过")
+        log(f"  校验失败 {chk.get('code')} {chk.get('message')} —— 跳过")
         return False
     d = chk.get("data") or {}
-    print(f"  [校验通过] 剩余名额={d.get('remainingQuota')} 我已报名={d.get('userBooking')} "
-          f"预约窗口 {d.get('appointmentOpenBeginTime')} ~ {d.get('appointmentOpenEndTime')}")
+    log(f"  校验通过 剩余名额={d.get('remainingQuota')} 我已报名={d.get('userBooking')} "
+        f"预约窗口 {d.get('appointmentOpenBeginTime')} ~ {d.get('appointmentOpenEndTime')}")
     if d.get("userBooking"):
-        print("  你已经报过这个场次了，跳过。")
+        log("  已经报过这个场次了，跳过。")
         return True
 
     if not execute:
-        print("  [dry-run] 到这里就停了；加 --execute 才会真正提交报名。")
+        log("  [dry-run] 到此为止；加 --execute 才会真正提交报名。")
         return False
 
     # 2) 真正报名
     res = post(URL_BOOK, {"examId": exam_id, "id": sid}, cookie)
     ok = res.get("code") == 200
-    ts = datetime.now().strftime("%H:%M:%S")
     if ok:
-        print(f"  [{ts}] ✅ 报名成功：{res.get('message')}")
+        log(f"  ✅ 报名成功：{res.get('message')}  （场次 {session.get('roomName')} "
+            f"{session.get('beginTime')}）")
     else:
-        print(f"  [{ts}] ❌ 报名失败：{res.get('code')} {res.get('message')}")
+        log(f"  ❌ 报名失败：{res.get('code')} {res.get('message')}")
     return ok
 
 

@@ -13,7 +13,7 @@ good_cookie.txt
 **/cookies.txt
 
 # === 运行时产物 ===
-sniper.log
+sniper*.log
 sniper.log.*
 __pycache__/
 *.pyc
