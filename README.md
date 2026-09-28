@@ -35,11 +35,25 @@ python ilearning_sniper.py --my-bookings
 python ilearning_sniper.py --city 上研青浦 --once
 
 # 3) 盯守（推荐参数：CDP 通道 + 每 10 分钟主动保鲜）
+#    已报名的场次用 --exclude-id 排除，避免重复报名多占考试次数额度
 python ilearning_sniper.py --city 上研青浦 --interval 30 --execute --yes \
-    --cookie-refresh cdp --cookie-source cdp --refresh-every 600
+    --cookie-refresh cdp --cookie-source cdp --refresh-every 600 \
+    --exclude-id 2094339437273288706
 ```
 
 `--execute` 才会真正报名，不加就是 dry-run 只打印。
+
+### 排除已报名的场次
+
+```bash
+--exclude-id 2094339437273288706            # 场次 ID，可重复
+--exclude-name 20261223                     # 按场次名关键词，可重复
+```
+
+报名成功后会**自动退出**（`while not booked`），所以重启盯守时如果不想再抢已有场次，
+务必带上排除参数——否则一有名额就会再报一场，白占一次额度（每年 4 次 / 每月 1 次）。
+
+场次 ID 可以用 `--city 上研青浦 --once` 看到，或在「我的考试 → 预约考试」里核对场次名。
 
 ## Cookie 怎么来
 

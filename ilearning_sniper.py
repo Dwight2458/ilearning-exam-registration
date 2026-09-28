@@ -280,7 +280,8 @@ def post(url: str, payload: dict, cookie: str, timeout: int = 15):
 
 def fetch_sessions(exam_id: str, cookie: str, keyword: str = "",
                    only_available: bool = False,
-                   date_start: str = "", date_end: str = ""):
+                   date_start: str = "", date_end: str = "",
+                   exclude_ids=None, exclude_keywords=None):
     body = {
         "examId": exam_id,
         "sessionName": keyword,
@@ -292,7 +293,21 @@ def fetch_sessions(exam_id: str, cookie: str, keyword: str = "",
     r = post(URL_SESSIONS, body, cookie)
     if r.get("code") != 200:
         raise RuntimeError(f"场次列表接口异常: {r.get('code')} {r.get('message')}")
-    return r.get("data") or []
+    rows = r.get("data") or []
+
+    # 本地排除：已经报过名的场次不该再抢（抢了会多占一次考试次数额度）
+    ex_ids = {str(x) for x in (exclude_ids or []) if str(x).strip()}
+    ex_kw = [k for k in (exclude_keywords or []) if str(k).strip()]
+    if ex_ids or ex_kw:
+        kept = []
+        for s in rows:
+            sid = str(s.get("id"))
+            name = str(s.get("roomName") or "") + str(s.get("sessionName") or "")
+            if sid in ex_ids or any(k in name for k in ex_kw):
+                continue
+            kept.append(s)
+        return kept
+    return rows
 
 
 def verify_cookie(cookie: str, exam_id: str = "54085") -> bool:
@@ -390,6 +405,11 @@ def main():
     ap.add_argument("--date-start", default="", help="考试开始时间下界，如 2026-11-01")
     ap.add_argument("--date-end", default="", help="考试开始时间上界，如 2026-11-30")
     ap.add_argument("--session-id", default="", help="只盯这一个场次 ID（最高优先级）")
+    ap.add_argument("--exclude-id", action="append", default=[], metavar="SESSION_ID",
+                    help="排除某场次 ID，可重复。用于『已经报上名的不再抢』"
+                         "（抢了会多占一次考试次数：每年4次/每月1次）")
+    ap.add_argument("--exclude-name", action="append", default=[], metavar="KEYWORD",
+                    help="按场次名关键词排除，可重复，如 --exclude-name 20261223")
     ap.add_argument("--only-available", action="store_true", help="只请求『可预约』场次（服务端过滤）")
     ap.add_argument("--interval", type=int, default=30, help="轮询间隔秒数，默认 30")
     ap.add_argument("--once", action="store_true", help="只跑一轮就退出")
@@ -462,9 +482,14 @@ def main():
             sys.exit(0)
 
     referer = f"https://ilearning.huawei.com/iexam/100000/examInfo?examId={args.exam_id}"
+    excl = ", ".join([f"id:{x}" for x in args.exclude_id]
+                     + [f"name~{x}" for x in args.exclude_name]) or "无"
     print(f"目标 examId={args.exam_id} 关键词='{args.city or '(全部)'}' "
           f"时间={args.date_start or '-'}~{args.date_end or '-'} "
-          f"间隔={args.interval}s 模式={'真实报名' if args.execute else 'DRY-RUN'}\n")
+          f"间隔={args.interval}s 模式={'真实报名' if args.execute else 'DRY-RUN'} "
+          f"排除={excl}\n")
+    log(f"启动：examId={args.exam_id} city={args.city or '全部'} interval={args.interval}s "
+        f"mode={'execute' if args.execute else 'dry-run'} 排除={excl}")
 
     round_no = 0
     booked = False
@@ -512,7 +537,9 @@ def main():
         ts = datetime.now().strftime("%H:%M:%S")
         try:
             sessions = fetch_sessions(args.exam_id, cookie, args.city,
-                                      args.only_available, args.date_start, args.date_end)
+                                      args.only_available, args.date_start, args.date_end,
+                                      exclude_ids=args.exclude_id,
+                                      exclude_keywords=args.exclude_name)
         except AuthError as e:
             if args.once:
                 print(f"\n❌ {e}")
