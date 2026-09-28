@@ -27,3 +27,6 @@ __pycache__/
 
 # === 本地导出 ===
 *.tmp
+
+# === 报名记录 ===
+*registration_record*

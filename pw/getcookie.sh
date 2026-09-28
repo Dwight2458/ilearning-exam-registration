@@ -21,4 +21,4 @@ fi
 playwright-cli -s=edge detach >/dev/null 2>&1
 
 # 4) 生成 cookie 文件（为空时不覆盖旧文件）
-"/c/Users/b00934843/.workbuddy/binaries/python/versions/3.13.12/python.exe" pw/mkcookie.py
+python pw/mkcookie.py

@@ -19,7 +19,7 @@ export PATH="/c/Program Files/Git/usr/bin:/c/Program Files/Git/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
 
-PY="/c/Users/b00934843/.workbuddy/binaries/python/versions/3.13.12/python.exe"
+PY="python"
 SSO_WAIT="${SSO_WAIT:-6}"
 SSO_URL="${SSO_URL:-https://ilearning.huawei.com/}"
 SKIP_SSO="${SKIP_SSO:-0}"
@@ -27,7 +27,7 @@ S="cdpcookie"
 
 PORT=""
 for p in 9222 9223 9333; do
-  if curl -s -m 2 "http://127.0.0.1:$p/json/version" >/dev/null 2>&1; then
+  if curl -s -m 2 --noproxy '*' "http://127.0.0.1:$p/json/version" >/dev/null 2>&1; then
     PORT=$p
     break
   fi

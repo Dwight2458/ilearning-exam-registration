@@ -132,17 +132,22 @@ def run_refresh_script(script: str, timeout: int) -> bool:
         r = subprocess.run(["bash", script], capture_output=True, timeout=timeout,
                            text=True, encoding="utf-8", errors="replace", env=env)
         out = (r.stdout or "").strip()
+        err = (r.stderr or "").strip()
         if out:
             # 把脚本所有输出都记下来，否则「SSO 预热中」这类过程信息会被吞掉
             for ln in out.splitlines():
                 if ln.strip():
                     log("  [取Cookie] " + ln.strip())
+        if err:
+            for ln in err.splitlines():
+                if ln.strip():
+                    log("  [取Cookie!err] " + ln.strip())
         return r.returncode == 0
     except Exception as e:
         log(f"刷新脚本异常：{e}")
         return False
 
-# ⚠️ 血的教训：playwright-cli attach --extension 每调用一次就会在 Edge 里开一个新的
+# 历史教训：playwright-cli attach --extension 每调用一次就会在 Edge 里开一个新的
 # Welcome(connect.html) 标签页。放进轮询循环里 = 一夜之间几万个标签页把浏览器打满。
 # 所以：默认【绝不】自动调用；只有显式 --cookie-refresh auto 且达到冷却时间才会尝试，
 # 并且整轮运行最多尝试 MAX_AUTO_REFRESH 次。
