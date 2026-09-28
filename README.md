@@ -111,4 +111,6 @@ python ilearning_sniper.py --city 上研青浦 --interval 30 --execute --yes \
 
 - Python 3（标准库，无第三方依赖）
 - Windows + Git Bash（脚本里用 `/c/...` 路径）
-- pgrep 不需要；`curl` 用于探测 CDP 端口
+- `curl` 用于探测 CDP 端口
+- `playwright-cli`（可选，但推荐安装）—— Cookie 自动刷新依赖它从 Edge 导出 Cookie。
+  不装的话 Cookie 失效后无法自动恢复，需手动从浏览器 F12 复制 Cookie 写入 `.ilearning_cookie.txt`
